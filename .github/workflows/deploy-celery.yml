@@ -1,0 +1,41 @@
+name: Deploy Celery on Windows
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    name: Deploy Celery on Windows using NSSM
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python virtual environment
+        shell: pwsh
+        run: |
+          $env:VENV_DIR = "$env:USERPROFILE\\\celery_venv"
+          python -m venv $env:VENV_DIR
+          & "$env:VENV_DIR\\Scripts\\pip.exe" install --upgrade pip
+          & "$env:VENV_DIR\\Scripts\\pip.exe" install -r requirements.txt
+
+      - name: Stop existing Celery service (if exists)
+        shell: cmd
+        continue-on-error: true
+        run: |
+          nssm stop CeleryWorker
+          timeout 5
+          nssm remove CeleryWorker confirm
+
+      - name: Install Celery as Windows Service using NSSM
+        shell: cmd
+        run: |
+          set VENV_DIR=%USERPROFILE%\test\celery_venv
+          set CELERY_APP=proj  REM Change to your actual app name
+          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m main
+          nssm set CeleryWorker AppDirectory "%cd%"
+          nssm set CeleryWorker Start SERVICE_AUTO_START
+          nssm start CeleryWorker
