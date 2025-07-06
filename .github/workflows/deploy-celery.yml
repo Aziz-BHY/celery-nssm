@@ -22,6 +22,7 @@ jobs:
             New-Item -ItemType Directory -Path $Target | Out-Null
           }
           robocopy $PWD $Target /MIR
+          if ErrorLevel 8 (exit /B 1) else (exit /B 0)
 
       - name: Set up Python virtual environment
         shell: pwsh
