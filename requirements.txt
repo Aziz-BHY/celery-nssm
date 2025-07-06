@@ -1,2 +1,2 @@
-celery==5.3.6
+celery[redis]
 flower
