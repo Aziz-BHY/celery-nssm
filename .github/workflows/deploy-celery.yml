@@ -26,6 +26,9 @@ jobs:
           if ($exitCode -gt 7) {
             Write-Error "Robocopy failed with exit code $exitCode"
             exit $exitCode
+          } else {
+            Write-Output "Robocopy completed successfully with exit code $exitCode"
+            exit 0
           }
 
       - name: Set up Python virtual environment
