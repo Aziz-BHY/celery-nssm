@@ -36,8 +36,10 @@ jobs:
         continue-on-error: true
         run: |
           nssm stop CeleryWorker
+          nssm stop CeleryFlower
           timeout 5
           nssm remove CeleryWorker confirm
+          nssm remove CeleryFlower confirm
 
       - name: Set up Python virtual environment
         shell: pwsh
@@ -51,11 +53,22 @@ jobs:
         shell: cmd
         run: |
           set VENV_DIR=C:\celery\venv
-          set CELERY_APP=proj
           mkdir C:\celery\logs
-          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m uvicorn main:app --host 127.0.0.1 --port 8011 --log-level info
+          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m celery -A celery_app worker --loglevel=info
           nssm set CeleryWorker AppDirectory "C:\celery"
           nssm set CeleryWorker Start SERVICE_AUTO_START
           nssm set CeleryWorker AppStdout "C:\celery\logs\celery_stdout.log"
           nssm set CeleryWorker AppStderr "C:\celery\logs\celery_stderr.log"
           nssm start CeleryWorker
+
+      - name: Install Flower as Windows Service using NSSM
+        shell: cmd
+        run: |
+          set VENV_DIR=C:\celery\venv
+          mkdir C:\celery\logs
+          nssm install CeleryFlower "%VENV_DIR%\Scripts\python.exe" " -m celery -A celery_app flower
+          nssm set CeleryFlower AppDirectory "C:\celery"
+          nssm set CeleryFlower Start SERVICE_AUTO_START
+          nssm set CeleryFlower AppStdout "C:\celery\logs\celery_flower_stdout.log"
+          nssm set CeleryFlower AppStderr "C:\celery\logs\celery_flower_stderr.log"
+          nssm start CeleryFlower
