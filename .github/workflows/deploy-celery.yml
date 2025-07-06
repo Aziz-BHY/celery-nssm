@@ -30,7 +30,13 @@ jobs:
             Write-Output "Robocopy completed successfully with exit code $exitCode"
             exit 0
           }
-      
+          
+      - name: Recreate .env file
+        shell: pwsh
+        run: |
+          $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.ENV_BASE_64 }}"))
+          Set-Content -Path "C:\celery\.env" -Value $decoded
+
       - name: Stop existing Celery service (if exists)
         shell: cmd
         continue-on-error: true
