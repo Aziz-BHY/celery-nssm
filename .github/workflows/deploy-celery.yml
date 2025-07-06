@@ -14,10 +14,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Copy code to target directory
+        shell: pwsh
+        run: |
+          $Target = "C:\celery"
+          if (!(Test-Path $Target)) {
+            New-Item -ItemType Directory -Path $Target | Out-Null
+          }
+          robocopy $PWD $Target /MIR
+
       - name: Set up Python virtual environment
         shell: pwsh
         run: |
-          $env:VENV_DIR = "$env:USERPROFILE\\\celery_venv"
+          $env:VENV_DIR = "C:\celery\venv"
           python -m venv $env:VENV_DIR
           & "$env:VENV_DIR\\Scripts\\pip.exe" install --upgrade pip
           & "$env:VENV_DIR\\Scripts\\pip.exe" install -r requirements.txt
@@ -33,9 +42,11 @@ jobs:
       - name: Install Celery as Windows Service using NSSM
         shell: cmd
         run: |
-          set VENV_DIR=%USERPROFILE%\test\celery_venv
-          set CELERY_APP=proj  REM Change to your actual app name
+          set VENV_DIR=C:\celery\venv
+          set CELERY_APP=proj
           nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m main
           nssm set CeleryWorker AppDirectory "%cd%"
           nssm set CeleryWorker Start SERVICE_AUTO_START
+          nssm set CeleryWorker AppStdout "C:\logs\celery_stdout.log"
+          nssm set CeleryWorker AppStderr "C:\logs\celery_stderr.log"
           nssm start CeleryWorker
