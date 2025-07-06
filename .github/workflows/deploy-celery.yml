@@ -53,7 +53,7 @@ jobs:
           set VENV_DIR=C:\celery\venv
           set CELERY_APP=proj
           nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m main
-          nssm set CeleryWorker AppDirectory "%cd%"
+          nssm set CeleryWorker AppDirectory "C:\celery"
           nssm set CeleryWorker Start SERVICE_AUTO_START
           nssm set CeleryWorker AppStdout "C:\logs\celery_stdout.log"
           nssm set CeleryWorker AppStderr "C:\logs\celery_stderr.log"
