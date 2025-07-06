@@ -54,7 +54,7 @@ jobs:
         run: |
           set VENV_DIR=C:\celery\venv
           mkdir C:\celery\logs
-          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m celery -A celery_app worker --loglevel=info
+          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" -m celery -A celery_app worker --loglevel=info
           nssm set CeleryWorker AppDirectory "C:\celery"
           nssm set CeleryWorker Start SERVICE_AUTO_START
           nssm set CeleryWorker AppStdout "C:\celery\logs\celery_stdout.log"
@@ -66,7 +66,7 @@ jobs:
         run: |
           set VENV_DIR=C:\celery\venv
           mkdir C:\celery\logs
-          nssm install CeleryFlower "%VENV_DIR%\Scripts\python.exe" " -m celery -A celery_app flower
+          nssm install CeleryFlower "%VENV_DIR%\Scripts\python.exe" -m celery -A celery_app flower
           nssm set CeleryFlower AppDirectory "C:\celery"
           nssm set CeleryFlower Start SERVICE_AUTO_START
           nssm set CeleryFlower AppStdout "C:\celery\logs\celery_flower_stdout.log"
