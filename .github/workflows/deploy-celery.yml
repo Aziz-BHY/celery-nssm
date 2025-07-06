@@ -30,6 +30,14 @@ jobs:
             Write-Output "Robocopy completed successfully with exit code $exitCode"
             exit 0
           }
+      
+      - name: Stop existing Celery service (if exists)
+        shell: cmd
+        continue-on-error: true
+        run: |
+          nssm stop CeleryWorker
+          timeout 5
+          nssm remove CeleryWorker confirm
 
       - name: Set up Python virtual environment
         shell: pwsh
@@ -38,14 +46,6 @@ jobs:
           python -m venv $env:VENV_DIR
           & "$env:VENV_DIR\\Scripts\\pip.exe" install --upgrade pip
           & "$env:VENV_DIR\\Scripts\\pip.exe" install -r requirements.txt
-
-      - name: Stop existing Celery service (if exists)
-        shell: cmd
-        continue-on-error: true
-        run: |
-          nssm stop CeleryWorker
-          timeout 5
-          nssm remove CeleryWorker confirm
 
       - name: Install Celery as Windows Service using NSSM
         shell: cmd
