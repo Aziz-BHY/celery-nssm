@@ -22,7 +22,11 @@ jobs:
             New-Item -ItemType Directory -Path $Target | Out-Null
           }
           robocopy $PWD $Target /MIR
-          if ErrorLevel 8 (exit /B 1) else (exit /B 0)
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -gt 7) {
+            Write-Error "Robocopy failed with exit code $exitCode"
+            exit $exitCode
+          }
 
       - name: Set up Python virtual environment
         shell: pwsh
