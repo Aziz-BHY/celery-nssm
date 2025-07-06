@@ -52,7 +52,7 @@ jobs:
         run: |
           set VENV_DIR=C:\celery\venv
           set CELERY_APP=proj
-          mkdir logs
+          mkdir C:\celery\logs
           nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" " -m uvicorn main:app --host 127.0.0.1 --port 8010 --log-level info
           nssm set CeleryWorker AppDirectory "C:\celery"
           nssm set CeleryWorker Start SERVICE_AUTO_START
