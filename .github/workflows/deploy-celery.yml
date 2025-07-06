@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+env:
+  CELERY_DIR: C:\celery
+  VENV_DIR: C:\celery\venv
+  LOG_DIR: C:\celery\logs
+  PYTHON_EXE: C:\celery\venv\Scripts\python.exe
+
 jobs:
   deploy:
     runs-on: self-hosted
@@ -17,11 +23,10 @@ jobs:
       - name: Copy code to target directory
         shell: pwsh
         run: |
-          $Target = "C:\celery"
-          if (!(Test-Path $Target)) {
-            New-Item -ItemType Directory -Path $Target | Out-Null
+          if (!(Test-Path "${{ env.CELERY_DIR }}")) {
+            New-Item -ItemType Directory -Path "${{ env.CELERY_DIR }}" | Out-Null
           }
-          robocopy $PWD $Target /MIR
+          robocopy $PWD "${{ env.CELERY_DIR }}" /MIR
           $exitCode = $LASTEXITCODE
           if ($exitCode -gt 7) {
             Write-Error "Robocopy failed with exit code $exitCode"
@@ -30,14 +35,14 @@ jobs:
             Write-Output "Robocopy completed successfully with exit code $exitCode"
             exit 0
           }
-          
+
       - name: Recreate .env file
         shell: pwsh
         run: |
           $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.ENV_BASE_64 }}"))
-          Set-Content -Path "C:\celery\.env" -Value $decoded
+          Set-Content -Path "${{ env.CELERY_DIR }}\.env" -Value $decoded
 
-      - name: Stop existing Celery service (if exists)
+      - name: Stop existing Celery services
         shell: cmd
         continue-on-error: true
         run: |
@@ -50,31 +55,33 @@ jobs:
       - name: Set up Python virtual environment
         shell: pwsh
         run: |
-          $env:VENV_DIR = "C:\celery\venv"
-          python -m venv $env:VENV_DIR
-          & "$env:VENV_DIR\\Scripts\\pip.exe" install --upgrade pip
-          & "$env:VENV_DIR\\Scripts\\pip.exe" install -r requirements.txt
+          python -m venv "${{ env.VENV_DIR }}"
+          & "${{ env.PYTHON_EXE }}" -m pip install --upgrade pip
+          & "${{ env.PYTHON_EXE }}" -m pip install -r "${{ env.CELERY_DIR }}\requirements.txt"
 
-      - name: Install Celery as Windows Service using NSSM
+      - name: Create log directory
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${{ env.LOG_DIR }}")) {
+            New-Item -ItemType Directory -Path "${{ env.LOG_DIR }}" | Out-Null
+          }
+
+      - name: Install Celery Worker as NSSM service
         shell: cmd
         run: |
-          set VENV_DIR=C:\celery\venv
-          mkdir C:\celery\logs
-          nssm install CeleryWorker "%VENV_DIR%\Scripts\python.exe" -m celery -A celery_app worker --loglevel=info
-          nssm set CeleryWorker AppDirectory "C:\celery"
+          nssm install CeleryWorker "${{ env.PYTHON_EXE }}" -m celery -A celery_app worker --loglevel=info
+          nssm set CeleryWorker AppDirectory "${{ env.CELERY_DIR }}"
           nssm set CeleryWorker Start SERVICE_AUTO_START
-          nssm set CeleryWorker AppStdout "C:\celery\logs\celery_stdout.log"
-          nssm set CeleryWorker AppStderr "C:\celery\logs\celery_stderr.log"
+          nssm set CeleryWorker AppStdout "${{ env.LOG_DIR }}\celery_stdout.log"
+          nssm set CeleryWorker AppStderr "${{ env.LOG_DIR }}\celery_stderr.log"
           nssm start CeleryWorker
 
-      - name: Install Flower as Windows Service using NSSM
+      - name: Install Flower as NSSM service
         shell: cmd
         run: |
-          set VENV_DIR=C:\celery\venv
-          mkdir C:\celery\logs
-          nssm install CeleryFlower "%VENV_DIR%\Scripts\python.exe" -m celery -A celery_app flower
-          nssm set CeleryFlower AppDirectory "C:\celery"
+          nssm install CeleryFlower "${{ env.PYTHON_EXE }}" -m celery -A celery_app flower
+          nssm set CeleryFlower AppDirectory "${{ env.CELERY_DIR }}"
           nssm set CeleryFlower Start SERVICE_AUTO_START
-          nssm set CeleryFlower AppStdout "C:\celery\logs\celery_flower_stdout.log"
-          nssm set CeleryFlower AppStderr "C:\celery\logs\celery_flower_stderr.log"
+          nssm set CeleryFlower AppStdout "${{ env.LOG_DIR }}\celery_flower_stdout.log"
+          nssm set CeleryFlower AppStderr "${{ env.LOG_DIR }}\celery_flower_stderr.log"
           nssm start CeleryFlower
