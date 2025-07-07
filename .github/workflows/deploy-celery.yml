@@ -69,7 +69,7 @@ jobs:
       - name: Install Celery Worker as NSSM service
         shell: cmd
         run: |
-          nssm install CeleryWorker "${{ env.PYTHON_EXE }}" -m celery -A celery_app worker --loglevel=info
+          nssm install CeleryWorker "${{ env.PYTHON_EXE }}" -m celery -A celery_app worker --concurrency=1 --loglevel=info
           nssm set CeleryWorker AppDirectory "${{ env.CELERY_DIR }}"
           nssm set CeleryWorker Start SERVICE_AUTO_START
           nssm set CeleryWorker AppStdout "${{ env.LOG_DIR }}\celery_stdout.log"
