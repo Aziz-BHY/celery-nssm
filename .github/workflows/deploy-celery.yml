@@ -26,7 +26,15 @@ jobs:
           if (!(Test-Path "${{ env.CELERY_DIR }}")) {
             New-Item -ItemType Directory -Path "${{ env.CELERY_DIR }}" | Out-Null
           }
-          robocopy $PWD "${{ env.CELERY_DIR }}" /MIR
+          
+          $excludeDirs = @("venv", "logs", ".git")
+          $excludeArgs = $excludeDirs | ForEach-Object { "/XD `"$PWD\$_`"" } | Out-String
+          $excludeArgs = $excludeArgs -replace "`r`n", " " # flatten to single line
+      
+          $command = "robocopy `"$PWD`" `"$env:CELERY_DIR`" /MIR $excludeArgs"
+          Write-Output "Running: $command"
+          iex $command
+
           $exitCode = $LASTEXITCODE
           if ($exitCode -gt 7) {
             Write-Error "Robocopy failed with exit code $exitCode"
